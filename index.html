@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wortsuche – Deutsch B1/B2</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--tx:#1d2330;--mut:#6b7385;--ac:#2f5bea;--ok:#1f9d55;--bd:#e2ded4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171f;--card:#1e222d;--tx:#eef0f5;--mut:#9aa2b5;--ac:#7b9bff;--ok:#4cd08a;--bd:#2f3544}}
+:root[data-theme="dark"]{--bg:#14171f;--card:#1e222d;--tx:#eef0f5;--mut:#9aa2b5;--ac:#7b9bff;--ok:#4cd08a;--bd:#2f3544}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:18px/1.45 -apple-system,"Helvetica Neue",Arial,sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:28px;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:14px}
+.top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:600}
+.pill{background:var(--bg);border:1px solid var(--bd);border-radius:999px;padding:4px 14px}
+.hintline{font-size:30px;letter-spacing:6px;font-weight:700;text-align:center;margin:6px 0;font-family:ui-monospace,Menlo,monospace}
+.row{display:flex;gap:10px}
+input{flex:1;min-width:0;font-size:22px;padding:14px;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--tx)}
+input:focus{outline:none;border-color:var(--ac)}
+button{font-size:18px;font-weight:600;padding:14px 20px;border-radius:12px;border:0;background:var(--ac);color:#fff;min-height:48px}
+button.sec{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
+.msg{min-height:26px;margin:10px 0 0;color:var(--mut)}
+.g{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.g:last-child{border:0}
+.w{width:38%;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.bar{flex:1;height:14px;background:var(--bg);border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:8px}
+.sc{width:44px;text-align:right;font-weight:700}
+.new{background:color-mix(in srgb,var(--ac) 10%,transparent)}
+.win{text-align:center}
+.win h2{margin:4px 0}
+.btns{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<main>
+<h1>Wortsuche</h1>
+<p class="sub">Finde das geheime Wort! Je näher dein Wort in der Bedeutung ist, desto höher die Punktzahl (0–100).</p>
+
+<div class="card">
+<div class="top"><span class="pill" id="theme"></span><span class="pill" id="rd"></span><span class="pill" id="tot"></span></div>
+<div class="hintline" id="hl"></div>
+<div class="row"><input id="in" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Wort eingeben …"><button id="go">Raten</button></div>
+<div class="msg" id="msg"></div>
+<div class="btns"><button class="sec" id="hb">Tipp (−15 Punkte)</button><button class="sec" id="sk">Aufgeben</button></div>
+</div>
+
+<div class="card win" id="winc" hidden></div>
+<div class="card" id="list" hidden></div>
+</main>
+
+<script>
+// Geheime Wörter: a = sehr nah (85), b = nah (65), c = verwandt (40), d = Thema (20)
+var G=[
+{w:"Bahnhof",t:"Reisen",a:"zug,gleis,bahnsteig,haltestelle,station",b:"fahrkarte,ticket,abfahrt,ankunft,verspätung,schaffner,bus,straßenbahn,u-bahn,flughafen",c:"reise,reisen,fahren,verkehr,koffer,fahrplan,warten,umsteigen,bahn,taxi,hafen",d:"stadt,urlaub,auto,fahrrad,reisepass,hotel,gepäck,tasche"},
+{w:"Arzt",t:"Gesundheit",a:"ärztin,doktor,mediziner,praxis,krankenhaus",b:"patient,krankenschwester,medikament,tablette,rezept,termin,untersuchung,apotheke,behandlung,sprechstunde",c:"krank,gesundheit,schmerzen,fieber,husten,grippe,erkältung,medizin,operation,impfung",d:"körper,kopf,bauch,hilfe,versicherung,gesund,schlafen,sport"},
+{w:"Küche",t:"Wohnen",a:"herd,kühlschrank,backofen,spüle,kochen",b:"topf,pfanne,teller,messer,gabel,löffel,tasse,geschirr,essen,rezept,schrank",c:"wohnung,zimmer,haus,tisch,stuhl,bad,wohnzimmer,schlafzimmer,backen,mahlzeit",d:"möbel,miete,balkon,garten,sauber,putzen,spülmaschine,frühstück"},
+{w:"Urlaub",t:"Freizeit",a:"ferien,reise,reisen,verreisen,erholung",b:"strand,meer,hotel,sonne,koffer,ausland,sommer,pension,camping,sehenswürdigkeit",c:"flug,flugzeug,flughafen,reisepass,gepäck,schwimmen,wandern,fotos,souvenir,buchen",d:"freizeit,wochenende,geld,sparen,auto,zug,berge,see,entspannen"},
+{w:"Büro",t:"Arbeit",a:"arbeitsplatz,schreibtisch,firma,arbeit,arbeiten",b:"kollege,kollegin,chef,chefin,computer,besprechung,meeting,konferenz,sekretärin,unternehmen",c:"job,beruf,gehalt,vertrag,bewerbung,lebenslauf,drucker,telefon,email,termin",d:"stress,pause,mittagessen,kaffee,überstunden,urlaub,schule,geld"},
+{w:"Schule",t:"Bildung",a:"lehrer,lehrerin,schüler,schülerin,klasse,unterricht",b:"universität,kurs,hausaufgabe,prüfung,zeugnis,klassenzimmer,tafel,heft,stundenplan,pause",c:"lernen,studieren,buch,note,noten,test,fach,mathe,deutsch,abitur",d:"kind,kinder,bildung,wissen,stift,rucksack,morgen,bibliothek,sprache"},
+{w:"Regen",t:"Wetter",a:"niederschlag,schauer,gewitter,regnen,nass",b:"wolke,wolken,sturm,wind,regenschirm,schirm,pfütze,tropfen,feucht,schnee",c:"wetter,himmel,kalt,grau,donner,blitz,nebel,jacke,regenmantel,herbst",d:"sonne,sommer,winter,temperatur,grad,vorhersage,draußen,wasser"},
+{w:"Supermarkt",t:"Einkaufen",a:"laden,geschäft,einkaufen,kaufhaus,markt",b:"einkaufswagen,kasse,kassiererin,regal,angebot,lebensmittel,bäckerei,obst,gemüse,einkaufsliste",c:"kaufen,bezahlen,geld,preis,tüte,brot,milch,käse,fleisch,getränke",d:"essen,kochen,rabatt,karte,bar,euro,hunger,kühlschrank,küche"}
+];
+var $=function(i){return document.getElementById(i)};
+var rd=0,total=0,pts=100,hints=0,guesses=[],seen={},idx=[];
+function norm(s){return s.toLowerCase().trim().replace(/ß/g,"ß").replace(/\s+/g," ")}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function score(word,g){
+  var x=norm(word),t=norm(g.w);
+  if(x===t)return 100;
+  var base={a:85,b:65,c:40,d:20},best=-1;
+  for(var k in base){if((","+g[k]+",").indexOf(","+x+",")>=0){best=base[k];break}}
+  if(best<0){
+    if(x.length>3&&(t.indexOf(x)>=0||x.indexOf(t)>=0))best=90;
+    else best=Math.min(8,1+Math.floor(Math.random()*0)+(x.charAt(0)===t.charAt(0)?2:0)+(Math.abs(x.length-t.length)<2?1:0));
+  }
+  return best;
+}
+function col(s){return s>=80?"#1f9d55":s>=60?"#7cb518":s>=35?"#e8a317":s>=15?"#e8702a":"#9aa2b5"}
+function cur(){return G[idx[rd]]}
+function showHint(){
+  var w=cur().w;
+  var out="";for(var i=0;i<w.length;i++)out+=(i<hints?w.charAt(i):"_")+" ";
+  $("hl").textContent=out.trim();
+}
+function render(){
+  $("rd").textContent="Runde "+(rd+1)+" / "+idx.length;
+  $("tot").textContent="Punkte: "+total;
+  $("theme").textContent="Thema: "+cur().t;
+  showHint();
+  var s=guesses.slice().sort(function(a,b){return b.s-a.s});
+  var h=guesses.length?"<strong>Deine Versuche ("+guesses.length+")</strong>":"";
+  s.forEach(function(g){
+    h+='<div class="g'+(g.n?' new':'')+'"><span class="w">'+g.w+'</span><span class="bar"><i style="width:'+Math.max(g.s,2)+'%;background:'+col(g.s)+'"></i></span><span class="sc">'+g.s+'</span></div>';
+    g.n=false;
+  });
+  $("list").hidden=!guesses.length;$("list").innerHTML=h;
+}
+function finish(won){
+  var gain=won?Math.max(pts,10):0;
+  total+=gain;
+  $("tot").textContent="Punkte: "+total;
+  var last=rd>=idx.length-1;
+  $("winc").hidden=false;
+  $("winc").innerHTML=(won?"<h2>🎉 Richtig! Das Wort war „"+cur().w+"“</h2><p>+"+gain+" Punkte</p>":"<h2>Das Wort war „"+cur().w+"“</h2><p>Nächstes Mal klappt es!</p>")+
+    (last?"<p><strong>Spiel zu Ende – Gesamtpunkte: "+total+"</strong></p>":"")+
+    '<div class="btns" style="justify-content:center"><button id="nx">'+(last?"Neu starten":"Nächstes Wort")+'</button></div>';
+  $("in").disabled=true;$("go").disabled=true;$("hb").disabled=true;$("sk").disabled=true;
+  $("nx").onclick=function(){
+    if(last){rd=0;total=0;idx=shuffle(G.map(function(_,i){return i}))}else rd++;
+    start();
+  };
+}
+function start(){
+  guesses=[];seen={};pts=100;hints=0;
+  $("winc").hidden=true;$("msg").textContent="";$("in").value="";
+  $("in").disabled=false;$("go").disabled=false;$("hb").disabled=false;$("sk").disabled=false;
+  render();
+}
+function guess(){
+  var v=norm($("in").value);
+  if(!v)return;
+  $("in").value="";
+  if(seen[v]){$("msg").textContent="Dieses Wort hattest du schon.";return}
+  seen[v]=1;
+  var s=score(v,cur());
+  pts=Math.max(10,pts-5);
+  guesses.push({w:v,s:s,n:true});
+  if(s===100){render();finish(true);return}
+  $("msg").textContent=s>=80?"Sehr heiß! 🔥":s>=60?"Heiß!":s>=35?"Warm.":s>=15?"Lauwarm.":"Kalt. Denk an das Thema!";
+  render();$("in").focus();
+}
+$("go").onclick=guess;
+$("in").addEventListener("keydown",function(e){if(e.key==="Enter")guess()});
+$("hb").onclick=function(){
+  if(hints<cur().w.length-1){hints++;pts=Math.max(10,pts-15);showHint();$("msg").textContent="Tipp: Buchstabe "+hints+" aufgedeckt. Aktuell möglich: "+pts+" Punkte."}
+};
+$("sk").onclick=function(){finish(false)};
+idx=shuffle(G.map(function(_,i){return i}));
+start();
+</script>
+</body>
+</html>
